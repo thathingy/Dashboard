@@ -24,8 +24,7 @@
         #weather-details { font-size: 13px; color: #a2a6b0; margin-bottom: 20px; }
         .forecast-box { width: 100% !important; font-size: 12.5px !important; margin-left: auto !important; }
         .weather-row { display: flex; justify-content: space-between; padding: 6px 8px !important; background: rgba(255,255,255,0.01); color: #ffffff; margin-bottom: 4px; }
-        .weather-row .day { color: #a2a6b0 !important; font-weight: 500; }
-        .rain-pct { color: #5cc2f2 !important; font-weight: 600; margin-right: 8px; }
+        .weather-row .day { color: #a2a6b0 !important; font-weight: 500; text-align: left !important; }
     </style>
 </head>
 <body>
@@ -53,114 +52,115 @@
     </div>
 
     <script>
-        // 🔒 REPLACE WITH YOUR SECURE ICAL LINKS
-        const GOOGLE_ICAL = "https://calendar.google.com/calendar/ical/1382abd753f572abe42c619efb9ee71576d680fd38f5661f4711b23cd3f6d0fd%40group.calendar.google.com/private-ec5db411e0b36493eaa1124c0ddb1565/basic.ics";
-        const CHURCHIE_ICAL = "https://my.churchie.com.au/calendar/export.php?export=all&event_type=&token=3ee8dffe24a12abfc929b4a70";
+        // 🔒 INSERT YOUR SECURE CALENDAR iCAL LINKS HERE
+        var GOOGLE_ICAL = "https://calendar.google.com/calendar/ical/1382abd753f572abe42c619efb9ee71576d680fd38f5661f4711b23cd3f6d0fd%40group.calendar.google.com/private-ec5db411e0b36493eaa1124c0ddb1565/basic.ics";
+        var CHURCHIE_ICAL = "https://my.churchie.com.au/calendar/export.php?export=all&event_type=&token=3ee8dffe24a12abfc929b4a70";
 
         function updateClock() {
-            var now = new Date();
-            var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            
-            document.getElementById("date").innerText = dayNames[now.getDay()] + ", " + monthNames[now.getMonth()] + " " + now.getDate();
-            
-            var hours = now.getHours();
-            var minutes = now.getMinutes();
-            var ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12;
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
+            try {
+                var now = new Date();
+                var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                
+                document.getElementById("date").innerText = dayNames[now.getDay()] + ", " + monthNames[now.getMonth()] + " " + now.getDate();
+                
+                var hours = now.getHours();
+                var minutes = now.getMinutes();
+                var ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                minutes = minutes < 10 ? '0' + minutes : minutes;
+                document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
 
-            if(now.getHours() >= 21 || now.getHours() < 6) {
-                document.body.style.filter = "brightness(0.35)";
-            } else {
-                document.body.style.filter = "brightness(1)";
-            }
+                if (now.getHours() >= 21 || now.getHours() < 6) {
+                    document.body.style.filter = "brightness(0.35)";
+                } else {
+                    document.body.style.filter = "brightness(1)";
+                }
+            } catch (err) { }
         }
         setInterval(updateClock, 1000); updateClock();
 
-        async function getWeather() {
-            try {
-                let url = "https://open-meteo.com";
-                let res = await fetch("https://corsproxy.io" + encodeURIComponent(url));
-                let data = await res.json();
-                
-                let currentTemp = Math.round(data.current.temperature_2m);
-                document.getElementById("current-temp").innerText = currentTemp + "°C";
-                document.getElementById("weather-details").innerText = "Humidity: " + data.current.relative_humidity_2m + "%";
-                
-                if (currentTemp < 18) {
-                    document.getElementById("insight").innerText = "Chilly morning! Grab your school jumper. 🧥";
-                } else if (data.daily.precipitation_probability_max[0] > 40) {
-                    document.getElementById("insight").innerText = "Rain predicted! Pack an umbrella today. 🌧️☔";
-                } else {
-                    document.getElementById("insight").innerText = "Ready for a great day at Churchie! ☀️";
-                }
+        function getWeather() {
+            var url = "https://open-meteo.com";
+            var proxyUrl = "https://corsproxy.io" + encodeURIComponent(url);
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", proxyUrl, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        var currentTemp = Math.round(data.current.temperature_2m);
+                        document.getElementById("current-temp").innerText = currentTemp + "°C";
+                        document.getElementById("weather-details").innerText = "Humidity: " + data.current.relative_humidity_2m + "%";
+                        
+                        if (currentTemp < 18) {
+                            document.getElementById("insight").innerText = "Chilly morning! Grab your school jumper. 🧥";
+                        } else if (data.daily.precipitation_probability_max[0] > 40) {
+                            document.getElementById("insight").innerText = "Rain predicted! Pack an umbrella today. 🌧️☔";
+                        } else {
+                            document.getElementById("insight").innerText = "Ready for a great day at Churchie! ☀️";
+                        }
 
-                let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                let html = "";
-                for(let i=0; i<7; i++) {
-                    let dateObj = new Date(data.daily.time[i]);
-                    let dayName = days[dateObj.getDay()];
-                    let max = Math.round(data.daily.temperature_2m_max[i]);
-                    let min = Math.round(data.daily.temperature_2m_min[i]);
-                    let rain = data.daily.precipitation_probability_max[i];
-                    html += `<div class="weather-row"><span class="day">${dayName}</span><span><span class="rain-pct">${rain}% 💧</span>${min}° / ${max}°</span></div>`;
+                        var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                        var html = "";
+                        for (var i = 0; i < 7; i++) {
+                            var dateParts = data.daily.time[i].split("-");
+                            var dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                            var dayName = days[dateObj.getDay()];
+                            var max = Math.round(data.daily.temperature_2m_max[i]);
+                            var min = Math.round(data.daily.temperature_2m_min[i]);
+                            var rain = data.daily.precipitation_probability_max[i];
+                            html += '<div class="weather-row"><span class="day">' + dayName + '</span><span><span class="rain-pct">' + rain + '% 💧</span>' + min + '° / ' + max + '°</span></div>';
+                        }
+                        document.getElementById("forecast-box").innerHTML = html;
+                    } catch (e) { }
                 }
-                document.getElementById("forecast-box").innerHTML = html;
-            } catch(e) { console.log(e); }
+            };
+            xhr.send();
         }
         getWeather(); setInterval(getWeather, 600000);
 
         function parseICal(icalText) {
-            let events = [];
-            let lines = icalText.split(/\r?\n/);
-            let currentEvent = null;
-            for (let line of lines) {
-                if (line.startsWith("BEGIN:VEVENT")) {
+            var events = [];
+            var lines = icalText.split(/\r?\n/);
+            var currentEvent = null;
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                if (line.indexOf("BEGIN:VEVENT") === 0) {
                     currentEvent = {};
-                } else if (line.startsWith("END:VEVENT")) {
+                } else if (line.indexOf("END:VEVENT") === 0) {
                     if (currentEvent && currentEvent.summary) events.push(currentEvent);
                     currentEvent = null;
                 } else if (currentEvent) {
-                    if (line.startsWith("SUMMARY:")) currentEvent.summary = line.substring(8);
-                    if (line.startsWith("DTSTART:")) currentEvent.start = line.substring(8);
-                    if (line.startsWith("DTSTART;VALUE=DATE:")) currentEvent.start = line.substring(19);
+                    if (line.indexOf("SUMMARY:") === 0) currentEvent.summary = line.substring(8);
+                    if (line.indexOf("DTSTART:") === 0) currentEvent.start = line.substring(8);
+                    if (line.indexOf("DTSTART;VALUE=DATE:") === 0) currentEvent.start = line.substring(19);
                 }
             }
             return events;
         }
 
-        async function fetchCalendars() {
-            let allEvents = [];
-            const proxy = "https://corsproxy.io";
-            try {
-                if(GOOGLE_ICAL && !GOOGLE_ICAL.includes("PASTE")) {
-                    let r = await fetch(proxy + encodeURIComponent(GOOGLE_ICAL));
-                    let t = await r.text();
-                    allEvents = allEvents.concat(parseICal(t));
-                }
-                if(CHURCHIE_ICAL && !CHURCHIE_ICAL.includes("PASTE")) {
-                    let r = await fetch(proxy + encodeURIComponent(CHURCHIE_ICAL));
-                    let t = await r.text();
-                    allEvents = allEvents.concat(parseICal(t));
-                }
-                
-                allEvents.sort((a,b) => a.start.localeCompare(b.start));
-                
-                let html = "";
-                let displayCount = Math.min(allEvents.length, 6);
-                if(displayCount === 0) {
-                    html = "<tr><td class='title'>No upcoming events found</td><td class='time'>--</td></tr>";
-                } else {
-                    for(let i=0; i<displayCount; i++) {
-                        let ev = allEvents[i];
-                        let dateStr = "Timed Event";
-                        if(ev.start && ev.start.length >= 8) {
-                            let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);
-                            let dObj = new Date(y + "-" + m + "-" + d);
-                            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                            dateStr = dObj.getDate() + " " + months[dObj.getMonth()];
-                        }
-Use code with caution.html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
+        function fetchCalendars() {
+            var allEvents = [];
+            var proxy = "https://corsproxy.io";
+            
+            var loadGoogle = function(callback) {
+                if (!GOOGLE_ICAL || GOOGLE_ICAL.indexOf("PASTE") !== -1) { callback(); return; }
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", proxy + encodeURIComponent(GOOGLE_ICAL), true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        allEvents = allEvents.concat(parseICal(xhr.responseText));
+                    }
+                    if (xhr.readyState === 4) callback();
+                };
+                xhr.send();
+            };
+
+            var loadChurchie = function() {
+                if (!CHURCHIE_ICAL || CHURCHIE_ICAL.indexOf("PASTE") !== -1) { renderEvents(); return; }
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", proxy + encodeURIComponent(CHURCHIE_ICAL), true);
+Use code with caution.xhr.onreadystatechange = function() {if (xhr.readyState === 4 && xhr.status === 200) {allEvents = allEvents.concat(parseICal(xhr.responseText));}if (xhr.readyState === 4) renderEvents();};xhr.send();};var renderEvents = function() {allEvents.sort(function(a, b) { return (a.start || "").localeCompare(b.start || ""); });var html = "";var displayCount = Math.min(allEvents.length, 6);if (displayCount === 0) {html = "No upcoming events found--";} else {for (var i = 0; i < displayCount; i++) {var ev = allEvents[i];var dateStr = "Event";if (ev.start && ev.start.length >= 8) {var y = parseInt(ev.start.substring(0, 4), 10);var m = parseInt(ev.start.substring(4, 6), 10) - 1;var d = parseInt(ev.start.substring(6, 8), 10);var dObj = new Date(y, m, d);var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];dateStr = dObj.getDate() + " " + months[dObj.getMonth()];}html += '' + ev.summary + '' + dateStr + '';}}document.getElementById("events-table").innerHTML = html;};loadGoogle(loadChurchie);}fetchCalendars(); setInterval(fetchCalendars, 1800000);
