@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churchie Dashboard</title>
+    <style>
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #060913; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-sizing: border-box; }
+        body { display: flex; flex-direction: row; padding: 35px 45px !important; gap: 40px; justify-content: space-between; position: relative !important; background-image: linear-gradient(145deg, #04060c 0%, #0b1120 100%); }
+        .left-col { display: flex; flex-direction: column; width: 52% !important; box-sizing: border-box; }
+        .right-col { display: flex; flex-direction: column; width: 40% !important; text-align: right; box-sizing: border-box; }
+        .clock { font-size: 4.5rem; font-weight: 200; color: #ffffff; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.4); margin: 0; }
+        .date { color: #8a8e99 !important; font-size: 1.2rem; font-weight: 500; letter-spacing: 0.5px; margin: 5px 0 0 0; text-transform: uppercase; }
+        .insight { font-size: 1.25rem; font-weight: 400; color: #FFD700; padding: 8px 0 16px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #FFD700; border-bottom: 2px solid #1a263f; padding-bottom: 8px; margin-bottom: 14px; text-align: left !important; }
+        .right-col .header { text-align: right !important; }
+        .timetable-container { overflow-y: hidden !important; max-height: 55vh !important; }
+        .timetable { width: 100% !important; border-collapse: separate !important; border-spacing: 0 8px !important; }
+        .timetable tr { background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.05) 100%) !important; border-radius: 6px !important; display: table-row !important; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+        .timetable td { padding: 12px 14px !important; font-size: 13.5px !important; vertical-align: middle !important; color: #ffffff; }
+        .timetable td.title { font-weight: 600 !important; text-align: left !important; width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; }
+        .timetable td.time { color: #FFD700 !important; font-weight: 500; text-align: right !important; width: 40%; border-left: 1px solid rgba(255, 255, 255, 0.08); padding-left: 14px !important; }
+        .temp { font-size: 4rem; font-weight: 200; color: #ffffff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #weather-details { font-size: 13px; color: #a2a6b0; margin-bottom: 20px; }
+        .forecast-box { width: 100% !important; font-size: 12.5px !important; margin-left: auto !important; border-collapse: separate !important; border-spacing: 0 4px !important; }
+        .weather-row { display: flex; justify-content: space-between; padding: 6px 8px !important; background: rgba(255,255,255,0.01); color: #ffffff; }
+        .weather-row .day { color: #a2a6b0 !important; font-weight: 500; }
+        .rain-pct { color: #5cc2f2 !important; font-weight: 600; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="left-col">
+        <div class="clock" id="time">12:00 PM</div>
+        <div class="date" id="date">LOADING DATE...</div>
+        <div class="insight" id="insight">Ready for a great day at Churchie! ☀️</div>
+        
+        <div class="header">7-Day Weekly Timetable</div>
+        <div class="timetable-container">
+            <table class="timetable" id="events-table">
+                <tr><td class="title">Loading timetables...</td><td class="time">Please wait</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="right-col">
+        <div class="header">Brisbane Weather</div>
+        <div class="temp" id="current-temp">--°C</div>
+        <div id="weather-details">Humidity: --%</div>
+        
+        <div class="header">7-Day Forecast Insights</div>
+        <div class="forecast-box" id="forecast-box">Loading forecast rows...</div>
+    </div>
+
+    <script>
+        // 🔒 INSERT YOUR SECURE CALENDAR iCAL LINKS HERE
+        const GOOGLE_ICAL = "PASTE_YOUR_GOOGLE_SECRET_ICAL_LINK_HERE";
+        const CHURCHIE_ICAL = "PASTE_YOUR_MYCHURCHIE_GENERATED_URL_HERE";
+
+        function updateClock() {
+            var now = new Date();
+            var options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+            document.getElementById("date").innerText = now.toLocaleDateString('en-AU', options);
+            var hours = now.getHours(); var minutes = now.getMinutes();
+            var ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12; hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0'+minutes : minutes;
+            document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
+            
+            // Auto-dim screen at night
+            if(now.getHours() >= 21 || now.getHours() < 6) {
+                document.body.style.filter = "brightness(0.35) grayscale(0.1)";
+            } else {
+                document.body.style.filter = "brightness(1)";
+            }
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        async function getWeather() {
+            try {
+                let res = await fetch("https://open-meteo.com");
+                let data = await res.json();
+                let currentTemp = Math.round(data.current.temperature_2m);
+                document.getElementById("current-temp").innerText = currentTemp + "°C";
+                document.getElementById("weather-details").innerText = "Humidity: " + data.current.relative_humidity_2m + "%";
+                
+                if (currentTemp < 18) {
+                    document.getElementById("insight").innerText = "Chilly morning! Grab your school jumper. 🧥";
+                } else if (data.daily.precipitation_probability_max[0] > 40) {
+                    document.getElementById("insight").innerText = "Rain predicted! Pack an umbrella today. 🌧️☔";
+                } else {
+                    document.getElementById("insight").innerText = "Ready for a great day at Churchie! ☀️";
+                }
+
+                let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                let html = "";
+                for(let i=0; i<7; i++) {
+                    let dateObj = new Date(data.daily.time[i]);
+                    let dayName = days[dateObj.getDay()];
+                    let max = Math.round(data.daily.temperature_2m_max[i]);
+                    let min = Math.round(data.daily.temperature_2m_min[i]);
+                    let rain = data.daily.precipitation_probability_max[i];
+                    html += `<div class="weather-row"><span class="day">${dayName}</span><span><span class="rain-pct">${rain}% 💧</span>${min}° / ${max}°</span></div>`;
+                }
+                document.getElementById("forecast-box").innerHTML = html;
+            } catch(e) { console.log(e); }
+        }
+        getWeather(); setInterval(getWeather, 600000);
+
+        // Simple open-source ical parser helper to convert strings into timetable rows
+        function parseICal(icalText, defaultColor) {
+            let events = [];
+            let lines = icalText.split(/\r?\n/);
+            let currentEvent = null;
+            
+            for (let line of lines) {
+                if (line.startsWith("BEGIN:VEVENT")) {
+                    currentEvent = {};
+                } else if (line.startsWith("END:VEVENT")) {
+                    if (currentEvent && currentEvent.summary) events.push(currentEvent);
+                    currentEvent = null;
+                } else if (currentEvent) {
+                    if (line.startsWith("SUMMARY:")) currentEvent.summary = line.substring(8);
+                    if (line.startsWith("DTSTART:")) currentEvent.start = line.substring(8);
+                    if (line.startsWith("DTSTART;VALUE=DATE:")) currentEvent.start = line.substring(19);
+                }
+            }
+            return events;
+        }
+
+        async function fetchCalendars() {
+            let allEvents = [];
+            // Employs a secure cors proxy fallback to fetch feeds safely into web context
+            const proxy = "https://corsproxy.io";
+            
+            try {
+                if(GOOGLE_ICAL && !GOOGLE_ICAL.includes("PASTE")) {
+                    let r = await fetch(proxy + encodeURIComponent(GOOGLE_ICAL));
+                    let t = await r.text();
+                    allEvents = allEvents.concat(parseICal(t, "#5cc2f2"));
+                }
+                if(CHURCHIE_ICAL && !CHURCHIE_ICAL.includes("PASTE")) {
+                    let r = await fetch(proxy + encodeURIComponent(CHURCHIE_ICAL));
+                    let t = await r.text();
+                    allEvents = allEvents.concat(parseICal(t, "#FFD700"));
+                }
+                
+                // Sort schedule events sequentially by date tracking values
+                allEvents.sort((a,b) => a.start.localeCompare(b.start));
+                
+                let html = "";
+                let displayCount = Math.min(allEvents.length, 7);
+                if(displayCount === 0) {
+                    html = "<tr><td class='title'>No upcoming events found</td><td class='time'>--</td></tr>";
+                } else {
+                    for(let i=0; i<displayCount; i++) {
+                        let ev = allEvents[i];
+                        let dateStr = "Timed Event";
+                        if(ev.start && ev.start.length >= 8) {
+Use code with caution.let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);let dObj = new Date(${y}-${m}-${d});dateStr = dObj.toLocaleDateString('en-AU', {day:'numeric', month:'short'});}html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
