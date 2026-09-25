@@ -67,7 +67,7 @@
             minutes = minutes < 10 ? '0'+minutes : minutes;
             document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
             
-            // Auto-dim screen at night
+            // Auto-dim screen at night (9PM - 6AM)
             if(now.getHours() >= 21 || now.getHours() < 6) {
                 document.body.style.filter = "brightness(0.35) grayscale(0.1)";
             } else {
@@ -78,8 +78,12 @@
 
         async function getWeather() {
             try {
-                let res = await fetch("https://open-meteo.com");
-                let data = await res.json();
+                // Fixed proxy query structure to fetch data parameters correctly into web context
+                let url = "https://open-meteo.com";
+                let res = await fetch("https://allorigins.win" + encodeURIComponent(url));
+                let wrapper = await res.json();
+                let data = JSON.parse(wrapper.contents);
+                
                 let currentTemp = Math.round(data.current.temperature_2m);
                 document.getElementById("current-temp").innerText = currentTemp + "°C";
                 document.getElementById("weather-details").innerText = "Humidity: " + data.current.relative_humidity_2m + "%";
@@ -107,8 +111,7 @@
         }
         getWeather(); setInterval(getWeather, 600000);
 
-        // Simple open-source ical parser helper to convert strings into timetable rows
-        function parseICal(icalText, defaultColor) {
+        function parseICal(icalText) {
             let events = [];
             let lines = icalText.split(/\r?\n/);
             let currentEvent = null;
@@ -130,31 +133,30 @@
 
         async function fetchCalendars() {
             let allEvents = [];
-            // Employs a secure cors proxy fallback to fetch feeds safely into web context
-            const proxy = "https://corsproxy.io";
+            const proxy = "https://allorigins.win";
             
             try {
                 if(GOOGLE_ICAL && !GOOGLE_ICAL.includes("PASTE")) {
                     let r = await fetch(proxy + encodeURIComponent(GOOGLE_ICAL));
-                    let t = await r.text();
-                    allEvents = allEvents.concat(parseICal(t, "#5cc2f2"));
+                    let wrapper = await r.json();
+                    let t = wrapper.contents;
+                    allEvents = allEvents.concat(parseICal(t));
                 }
                 if(CHURCHIE_ICAL && !CHURCHIE_ICAL.includes("PASTE")) {
                     let r = await fetch(proxy + encodeURIComponent(CHURCHIE_ICAL));
-                    let t = await r.text();
-                    allEvents = allEvents.concat(parseICal(t, "#FFD700"));
+                    let wrapper = await r.json();
+                    let t = wrapper.contents;
+                    allEvents = allEvents.concat(parseICal(t));
                 }
                 
-                // Sort schedule events sequentially by date tracking values
+                // Keep lookahead schedule items strictly sorted chronologically
                 allEvents.sort((a,b) => a.start.localeCompare(b.start));
                 
                 let html = "";
-                let displayCount = Math.min(allEvents.length, 7);
+                let displayCount = Math.min(allEvents.length, 6);
                 if(displayCount === 0) {
                     html = "<tr><td class='title'>No upcoming events found</td><td class='time'>--</td></tr>";
                 } else {
                     for(let i=0; i<displayCount; i++) {
                         let ev = allEvents[i];
-                        let dateStr = "Timed Event";
-                        if(ev.start && ev.start.length >= 8) {
-Use code with caution.let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);let dObj = new Date(${y}-${m}-${d});dateStr = dObj.toLocaleDateString('en-AU', {day:'numeric', month:'short'});}html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
+Use code with caution.let dateStr = "Timed Event";if(ev.start && ev.start.length >= 8) {let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);let dObj = new Date(${y}-${m}-${d});dateStr = dObj.toLocaleDateString('en-AU', {day:'numeric', month:'short'});}html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
