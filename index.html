@@ -5,25 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Churchie Dashboard</title>
     <style>
-        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #060913; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-sizing: border-box; }
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #060913; font-family: sans-serif; box-sizing: border-box; }
         body { display: flex; flex-direction: row; padding: 35px 45px !important; gap: 40px; justify-content: space-between; position: relative !important; background-image: linear-gradient(145deg, #04060c 0%, #0b1120 100%); }
         .left-col { display: flex; flex-direction: column; width: 52% !important; box-sizing: border-box; }
         .right-col { display: flex; flex-direction: column; width: 40% !important; text-align: right; box-sizing: border-box; }
-        .clock { font-size: 4.5rem; font-weight: 200; color: #ffffff; line-height: 1; text-shadow: 0 4px 10px rgba(0,0,0,0.4); margin: 0; }
+        .clock { font-size: 4.5rem; font-weight: 200; color: #ffffff; line-height: 1; margin: 0; }
         .date { color: #8a8e99 !important; font-size: 1.2rem; font-weight: 500; letter-spacing: 0.5px; margin: 5px 0 0 0; text-transform: uppercase; }
-        .insight { font-size: 1.25rem; font-weight: 400; color: #FFD700; padding: 8px 0 16px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .insight { font-size: 1.25rem; font-weight: 400; color: #FFD700; padding: 8px 0 16px 0; }
         .header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #FFD700; border-bottom: 2px solid #1a263f; padding-bottom: 8px; margin-bottom: 14px; text-align: left !important; }
         .right-col .header { text-align: right !important; }
         .timetable-container { overflow-y: hidden !important; max-height: 55vh !important; }
         .timetable { width: 100% !important; border-collapse: separate !important; border-spacing: 0 8px !important; }
-        .timetable tr { background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.05) 100%) !important; border-radius: 6px !important; display: table-row !important; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+        .timetable tr { background: rgba(255,255,255,0.04) !important; border-radius: 6px !important; display: table-row !important; }
         .timetable td { padding: 12px 14px !important; font-size: 13.5px !important; vertical-align: middle !important; color: #ffffff; }
-        .timetable td.title { font-weight: 600 !important; text-align: left !important; width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; }
+        .timetable td.title { font-weight: 600 !important; text-align: left !important; width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .timetable td.time { color: #FFD700 !important; font-weight: 500; text-align: right !important; width: 40%; border-left: 1px solid rgba(255, 255, 255, 0.08); padding-left: 14px !important; }
-        .temp { font-size: 4rem; font-weight: 200; color: #ffffff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .temp { font-size: 4rem; font-weight: 200; color: #ffffff; margin: 0; }
         #weather-details { font-size: 13px; color: #a2a6b0; margin-bottom: 20px; }
-        .forecast-box { width: 100% !important; font-size: 12.5px !important; margin-left: auto !important; border-collapse: separate !important; border-spacing: 0 4px !important; }
-        .weather-row { display: flex; justify-content: space-between; padding: 6px 8px !important; background: rgba(255,255,255,0.01); color: #ffffff; }
+        .forecast-box { width: 100% !important; font-size: 12.5px !important; margin-left: auto !important; }
+        .weather-row { display: flex; justify-content: space-between; padding: 6px 8px !important; background: rgba(255,255,255,0.01); color: #ffffff; margin-bottom: 4px; }
         .weather-row .day { color: #a2a6b0 !important; font-weight: 500; }
         .rain-pct { color: #5cc2f2 !important; font-weight: 600; margin-right: 8px; }
     </style>
@@ -31,9 +31,9 @@
 <body>
 
     <div class="left-col">
-        <div class="clock" id="time">12:00 PM</div>
-        <div class="date" id="date">LOADING DATE...</div>
-        <div class="insight" id="insight">Ready for a great day at Churchie! ☀️</div>
+        <div class="clock" id="time">--:--</div>
+        <div class="date" id="date">Loading Date...</div>
+        <div class="insight" id="insight">Connecting to Brisbane weather streams...</div>
         
         <div class="header">7-Day Weekly Timetable</div>
         <div class="timetable-container">
@@ -53,23 +53,27 @@
     </div>
 
     <script>
-        // 🔒 INSERT YOUR SECURE CALENDAR iCAL LINKS HERE
+        // 🔒 REPLACE WITH YOUR SECURE ICAL LINKS
         const GOOGLE_ICAL = "https://calendar.google.com/calendar/ical/1382abd753f572abe42c619efb9ee71576d680fd38f5661f4711b23cd3f6d0fd%40group.calendar.google.com/private-ec5db411e0b36493eaa1124c0ddb1565/basic.ics";
         const CHURCHIE_ICAL = "https://my.churchie.com.au/calendar/export.php?export=all&event_type=&token=3ee8dffe24a12abfc929b4a70";
 
         function updateClock() {
             var now = new Date();
-            var options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
-            document.getElementById("date").innerText = now.toLocaleDateString('en-AU', options);
-            var hours = now.getHours(); var minutes = now.getMinutes();
-            var ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12; hours = hours ? hours : 12;
-            minutes = minutes < 10 ? '0'+minutes : minutes;
-            document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
+            var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             
-            // Auto-dim screen at night (9PM - 6AM)
+            document.getElementById("date").innerText = dayNames[now.getDay()] + ", " + monthNames[now.getMonth()] + " " + now.getDate();
+            
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            document.getElementById("time").innerText = hours + ':' + minutes + ' ' + ampm;
+
             if(now.getHours() >= 21 || now.getHours() < 6) {
-                document.body.style.filter = "brightness(0.35) grayscale(0.1)";
+                document.body.style.filter = "brightness(0.35)";
             } else {
                 document.body.style.filter = "brightness(1)";
             }
@@ -78,11 +82,9 @@
 
         async function getWeather() {
             try {
-                // Fixed proxy query structure to fetch data parameters correctly into web context
                 let url = "https://open-meteo.com";
-                let res = await fetch("https://allorigins.win" + encodeURIComponent(url));
-                let wrapper = await res.json();
-                let data = JSON.parse(wrapper.contents);
+                let res = await fetch("https://corsproxy.io" + encodeURIComponent(url));
+                let data = await res.json();
                 
                 let currentTemp = Math.round(data.current.temperature_2m);
                 document.getElementById("current-temp").innerText = currentTemp + "°C";
@@ -115,7 +117,6 @@
             let events = [];
             let lines = icalText.split(/\r?\n/);
             let currentEvent = null;
-            
             for (let line of lines) {
                 if (line.startsWith("BEGIN:VEVENT")) {
                     currentEvent = {};
@@ -133,23 +134,19 @@
 
         async function fetchCalendars() {
             let allEvents = [];
-            const proxy = "https://allorigins.win";
-            
+            const proxy = "https://corsproxy.io";
             try {
                 if(GOOGLE_ICAL && !GOOGLE_ICAL.includes("PASTE")) {
                     let r = await fetch(proxy + encodeURIComponent(GOOGLE_ICAL));
-                    let wrapper = await r.json();
-                    let t = wrapper.contents;
+                    let t = await r.text();
                     allEvents = allEvents.concat(parseICal(t));
                 }
                 if(CHURCHIE_ICAL && !CHURCHIE_ICAL.includes("PASTE")) {
                     let r = await fetch(proxy + encodeURIComponent(CHURCHIE_ICAL));
-                    let wrapper = await r.json();
-                    let t = wrapper.contents;
+                    let t = await r.text();
                     allEvents = allEvents.concat(parseICal(t));
                 }
                 
-                // Keep lookahead schedule items strictly sorted chronologically
                 allEvents.sort((a,b) => a.start.localeCompare(b.start));
                 
                 let html = "";
@@ -159,4 +156,11 @@
                 } else {
                     for(let i=0; i<displayCount; i++) {
                         let ev = allEvents[i];
-Use code with caution.let dateStr = "Timed Event";if(ev.start && ev.start.length >= 8) {let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);let dObj = new Date(${y}-${m}-${d});dateStr = dObj.toLocaleDateString('en-AU', {day:'numeric', month:'short'});}html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
+                        let dateStr = "Timed Event";
+                        if(ev.start && ev.start.length >= 8) {
+                            let y = ev.start.substring(0,4); let m = ev.start.substring(4,6); let d = ev.start.substring(6,8);
+                            let dObj = new Date(y + "-" + m + "-" + d);
+                            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                            dateStr = dObj.getDate() + " " + months[dObj.getMonth()];
+                        }
+Use code with caution.html += <tr><td class="title">${ev.summary}</td><td class="time">${dateStr}</td></tr>;}}document.getElementById("events-table").innerHTML = html;} catch(e) {document.getElementById("events-table").innerHTML = "Calendar Sync TimeoutRetry";}}fetchCalendars(); setInterval(fetchCalendars, 1800000);
